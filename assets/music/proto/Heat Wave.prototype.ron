@@ -1,0 +1,10 @@
+(
+    name: "Song:HeatWave",
+    schematics: {
+        "boundry_dynamics::song::Song": (
+            bpm: 130,
+            offset: 0,
+            source: AssetPath("music/Heat Wave.mp3"),
+        )
+    }
+)

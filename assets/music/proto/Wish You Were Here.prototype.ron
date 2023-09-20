@@ -1,0 +1,10 @@
+(
+    name: "Song:WishYouWereHere",
+    schematics: {
+        "boundry_dynamics::song::Song": (
+            bpm: 125,
+            offset: 0,
+            source: AssetPath("music/Wish You Were Here.mp3"),
+        )
+    }
+)

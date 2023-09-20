@@ -1,0 +1,10 @@
+(
+    name: "Song:INeedYouLove",
+    schematics: {
+        "boundry_dynamics::song::Song": (
+            bpm: 126,
+            offset: 0,
+            source: AssetPath("music/I Need You Love.mp3"),
+        )
+    }
+)
