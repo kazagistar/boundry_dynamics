@@ -40,7 +40,7 @@ fn load_monster_spawner(
     commands.spawn(
         MonsterSpawner {
             handle: texture_atlas_handle,
-            timer: Timer::from_seconds(0.2, TimerMode::Repeating),
+            timer: Timer::from_seconds(0.01, TimerMode::Repeating),
         }
     );
 }
@@ -103,7 +103,7 @@ fn chase(
 }
 
 fn juice(
-    mut monsters: Query<&mut Transform, With<Monster>>,
+    mut monsters: Query<&mut Transform, With<MonsterSprite>>,
     song: Res<SongPlayback>,
 ) {
     let size = 0.8 + song.bpm_timer.percent_left().min(song.bpm_timer.percent()) * 0.4;
