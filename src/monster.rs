@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 use crate::{character::Character, song::SongPlayback};
 use rand::prelude::*;
@@ -16,13 +17,16 @@ impl Plugin for MonsterPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             .add_systems(Startup, load_monster_spawner)
-            .add_systems(Update, spawn_monster)
-            .add_systems(FixedUpdate, (chase, juice));
+            .add_systems(Update, (spawn_monster, chase, juice));
     }
 }
 
 #[derive(Component)]
 struct Monster;
+
+#[derive(Component)]
+struct MonsterSprite;
+
 
 fn load_monster_spawner(
     asset_server: Res<AssetServer>,
@@ -36,7 +40,7 @@ fn load_monster_spawner(
     commands.spawn(
         MonsterSpawner {
             handle: texture_atlas_handle,
-            timer: Timer::from_seconds(0.002, TimerMode::Repeating),
+            timer: Timer::from_seconds(0.2, TimerMode::Repeating),
         }
     );
 }
@@ -61,37 +65,49 @@ fn spawn_monster(
     let spawn_pos = character_pos + offset.extend(0.0);
 
     commands.spawn((
-        SpriteSheetBundle {
-            texture_atlas: spawner.handle.clone(),
-            sprite: TextureAtlasSprite::new(0),
-            transform: Transform {
-                translation: spawn_pos,
+        Monster,
+        SpatialBundle::from(Transform::from_translation(spawn_pos)),
+        RigidBody::Dynamic,
+        Collider::ball(15.0),
+        Restitution::coefficient(0.0),
+        Velocity::default(),
+        AdditionalMassProperties::Mass(1.0),
+        GravityScale(0.0),
+        LockedAxes::ROTATION_LOCKED,
+    )).with_children(|builder| {
+        builder.spawn((
+            MonsterSprite,
+            SpriteSheetBundle {
+                texture_atlas: spawner.handle.clone(),
+                sprite: TextureAtlasSprite::new(0),
                 ..default()
             },
-            ..default()
-        },
-        Monster,
-    ));
+        ));
+    });
 }
 
 fn chase(
-    mut monsters: Query<(&mut Transform, &Monster)>,
+    mut monsters: Query<(&Transform, &mut Velocity), (With<Monster>, Without<Character>)>,
     character: Query<&Transform, (With<Character>, Without<Monster>)>,
     song: Res<SongPlayback>
 ) {
     let character = character.single().translation;
-    let speed = song.bpm_timer.percent_left();
-    for (mut transform, _monster) in monsters.iter_mut() {
-        transform.translation = transform.translation + (character - transform.translation).clamp_length(0.0, 4.0 * speed);
+    // Travel 4 pixels per tick (pixels per meter is set to 1.0)
+    let target_speed = song.bpm_timer.percent_left() * 4.0 * 60.0;
+    for (transform, mut velocity) in monsters.iter_mut() {
+        let target_velocity = (character - transform.translation).clamp_length(0.0,  target_speed);
+        // Fix velocity
+        velocity.linvel = target_velocity.truncate();
+        // println!("{}", ext_imp.impulse);
     }
 }
 
 fn juice(
-    mut monsters: Query<(&mut Transform, &Monster)>,
+    mut monsters: Query<&mut Transform, With<Monster>>,
     song: Res<SongPlayback>,
 ) {
-    let size = 1.0 + song.bpm_timer.percent_left().min(song.bpm_timer.percent()) * 0.4;
-    for (mut transform, _monster) in monsters.iter_mut() {
+    let size = 0.8 + song.bpm_timer.percent_left().min(song.bpm_timer.percent()) * 0.4;
+    for mut transform in monsters.iter_mut() {
         transform.scale = Vec3::new(size, size, 1.0);
     }
 }
