@@ -16,5 +16,5 @@ opt-level = 3
 [dependencies]
 bevy = { version = "0.11", features = ["mp3"] }
 bevy_ecs_tilemap = { version = "0.11", features = ["atlas", "render"] }
-bevy_xpbd_2d = { version = "0.2", features = ["simd"] }
+bevy_xpbd_2d = { version = "0.2", features = [ "simd", "debug-plugin" ] }
 rand = "0.8"

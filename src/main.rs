@@ -13,7 +13,7 @@ fn main() {
         .add_plugins((DefaultPlugins,))
         .add_plugins((LogDiagnosticsPlugin::default(), FrameTimeDiagnosticsPlugin::default()))
         .add_plugins(PhysicsPlugins::default())
-        //.add_plugins(PhysicsDebugPlugin::default())
+        .insert_resource(SubstepCount(3))
         .add_plugins((SongPlugin, CharacterPlugin, MonsterPlugin))
         .add_systems(Startup, start_camera)
         .insert_resource(FixedTime::new_from_secs(1.0 / 60.0))

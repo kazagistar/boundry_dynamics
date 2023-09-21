@@ -36,7 +36,7 @@ fn load_monster_spawner(
     commands.spawn(
         MonsterSpawner {
             handle: texture_atlas_handle,
-            timer: Timer::from_seconds(0.2, TimerMode::Repeating),
+            timer: Timer::from_seconds(0.01, TimerMode::Repeating),
         }
     );
 }
@@ -70,7 +70,7 @@ fn spawn_monster(
         RigidBody::Dynamic,
         Position::from(spawn_pos.truncate()),
         Collider::ball(15.0),
-        //Restitution::from(0.0),
+        Restitution::from(0.0),
         GravityScale(0.0),
         LockedAxes::ROTATION_LOCKED,
     ));
@@ -88,7 +88,6 @@ fn chase(
         let target_velocity = (character - transform.translation).clamp_length(0.0,  target_speed);
         // Fix velocity
         velocity.0 = target_velocity.truncate();
-        // println!("{}", ext_imp.impulse);
     }
 }
 
