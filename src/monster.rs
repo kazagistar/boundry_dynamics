@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 
 use crate::{character::Character, song::SongPlayback};
 use rand::prelude::*;
@@ -23,10 +23,6 @@ impl Plugin for MonsterPlugin {
 
 #[derive(Component)]
 struct Monster;
-
-#[derive(Component)]
-struct MonsterSprite;
-
 
 fn load_monster_spawner(
     asset_server: Res<AssetServer>,
@@ -66,28 +62,22 @@ fn spawn_monster(
 
     commands.spawn((
         Monster,
-        SpatialBundle::from(Transform::from_translation(spawn_pos)),
+        SpriteSheetBundle {
+            texture_atlas: spawner.handle.clone(),
+            sprite: TextureAtlasSprite::new(0),
+            ..default()
+        },
         RigidBody::Dynamic,
+        Position::from(spawn_pos.truncate()),
         Collider::ball(15.0),
-        Restitution::coefficient(0.0),
-        Velocity::default(),
-        AdditionalMassProperties::Mass(1.0),
+        //Restitution::from(0.0),
         GravityScale(0.0),
         LockedAxes::ROTATION_LOCKED,
-    )).with_children(|builder| {
-        builder.spawn((
-            MonsterSprite,
-            SpriteSheetBundle {
-                texture_atlas: spawner.handle.clone(),
-                sprite: TextureAtlasSprite::new(0),
-                ..default()
-            },
-        ));
-    });
+    ));
 }
 
 fn chase(
-    mut monsters: Query<(&Transform, &mut Velocity), (With<Monster>, Without<Character>)>,
+    mut monsters: Query<(&Transform, &mut LinearVelocity), (With<Monster>, Without<Character>)>,
     character: Query<&Transform, (With<Character>, Without<Monster>)>,
     song: Res<SongPlayback>
 ) {
@@ -97,7 +87,7 @@ fn chase(
     for (transform, mut velocity) in monsters.iter_mut() {
         let target_velocity = (character - transform.translation).clamp_length(0.0,  target_speed);
         // Fix velocity
-        velocity.linvel = target_velocity.truncate();
+        velocity.0 = target_velocity.truncate();
         // println!("{}", ext_imp.impulse);
     }
 }
