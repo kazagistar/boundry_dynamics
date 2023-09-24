@@ -17,16 +17,9 @@ impl Plugin for MonsterPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             .add_systems(Startup, load_monster_spawner)
-            .add_systems(Update, (spawn_monster, chase, juice));
+            .add_systems(Update, (spawn_monster, BeatChase::system, BeatScale::system));
     }
 }
-
-#[derive(Component)]
-struct Monster;
-
-#[derive(Component)]
-struct MonsterSprite;
-
 
 fn load_monster_spawner(
     asset_server: Res<AssetServer>,
@@ -40,10 +33,11 @@ fn load_monster_spawner(
     commands.spawn(
         MonsterSpawner {
             handle: texture_atlas_handle,
-            timer: Timer::from_seconds(0.01, TimerMode::Repeating),
+            timer: Timer::from_seconds(0.2, TimerMode::Repeating),
         }
     );
 }
+
 
 fn spawn_monster(
     mut commands: Commands,
@@ -65,7 +59,7 @@ fn spawn_monster(
     let spawn_pos = character_pos + offset.extend(0.0);
 
     commands.spawn((
-        Monster,
+        BeatChase { tween: Tween { ttype: TweenType::Sawtooth, a: 60.0 * 4.0, b: 60.0 * -1.0 }},
         SpatialBundle::from(Transform::from_translation(spawn_pos)),
         RigidBody::Dynamic,
         Collider::ball(15.0),
@@ -76,7 +70,7 @@ fn spawn_monster(
         LockedAxes::ROTATION_LOCKED,
     )).with_children(|builder| {
         builder.spawn((
-            MonsterSprite,
+            BeatChase { tween: Tween { ttype: TweenType::Triangle, a: 0.8, b: 1.2 }},
             SpriteSheetBundle {
                 texture_atlas: spawner.handle.clone(),
                 sprite: TextureAtlasSprite::new(0),
@@ -86,28 +80,68 @@ fn spawn_monster(
     });
 }
 
-fn chase(
-    mut monsters: Query<(&Transform, &mut Velocity), (With<Monster>, Without<Character>)>,
-    character: Query<&Transform, (With<Character>, Without<Monster>)>,
-    song: Res<SongPlayback>
-) {
-    let character = character.single().translation;
-    // Travel 4 pixels per tick (pixels per meter is set to 1.0)
-    let target_speed = song.bpm_timer.percent_left() * 4.0 * 60.0;
-    for (transform, mut velocity) in monsters.iter_mut() {
-        let target_velocity = (character - transform.translation).clamp_length(0.0,  target_speed);
-        // Fix velocity
-        velocity.linvel = target_velocity.truncate();
-        // println!("{}", ext_imp.impulse);
+
+#[derive(Component)]
+struct BeatChase {
+    tween: Tween
+}
+impl BeatChase {
+    fn system(
+        mut monsters: Query<(&Transform, &mut Velocity, &BeatChase)>,
+        character: Query<&Transform, With<Character>>,
+        song: Res<SongPlayback>,
+    ) {
+        let character = character.single().translation;
+        let p = song.bpm_timer.percent();
+        // Travel 4 pixels per tick (pixels per meter is set to 1.0)
+        for (transform, mut velocity, config) in monsters.iter_mut() {
+            let target_speed = config.tween.tween(p);
+            let target_velocity = (character - transform.translation).clamp_length(0.0,  target_speed);
+            // Fix velocity
+            velocity.linvel = target_velocity.truncate();
+        }
     }
 }
 
-fn juice(
-    mut monsters: Query<&mut Transform, With<MonsterSprite>>,
-    song: Res<SongPlayback>,
-) {
-    let size = 0.8 + song.bpm_timer.percent_left().min(song.bpm_timer.percent()) * 0.4;
-    for mut transform in monsters.iter_mut() {
-        transform.scale = Vec3::new(size, size, 1.0);
+
+#[derive(Component)]
+struct BeatScale {
+    tween: Tween,
+}
+impl BeatScale {
+    fn system(
+        mut monsters: Query<(&mut Transform, &BeatScale)>,
+        song: Res<SongPlayback>,
+    ) {
+        let p = song.bpm_timer.percent();
+        for (mut transform, config) in monsters.iter_mut() {
+            let size = config.tween.tween(p);
+            transform.scale = Vec3::new(size, size, 1.0);
+        }
     }
+}
+
+pub struct Tween {
+    ttype: TweenType,
+    a: f32,
+    b: f32,
+}
+
+#[derive(Copy, Clone)]
+pub enum TweenType {
+    Sawtooth,
+    Triangle,
+}
+
+impl Tween {
+    fn tween(&self, p: f32) -> f32 {
+        match self.ttype {
+            TweenType::Sawtooth => lerp(self.a, self.b, p),
+            TweenType::Triangle => lerp(self.a, self.b, p.min(1.0 - p) * 2.0),
+        }
+    }
+}
+
+fn lerp(s: f32, e: f32, p: f32) -> f32 {
+    s + p * (e - s)
 }
