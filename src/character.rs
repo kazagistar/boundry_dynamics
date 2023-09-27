@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 pub struct CharacterPlugin;
 impl Plugin for CharacterPlugin {
@@ -32,6 +33,9 @@ fn load_character(
             },
             ..default()
         },
+        RigidBody::KinematicPositionBased,
+        GravityScale(0.0),
+        Collider::ball(5.0),
         Character,
     ));
 }

@@ -12,6 +12,7 @@ impl Plugin for SongPlugin {
 #[derive(Resource)]
 pub struct SongPlayback {
     pub bpm_timer: Timer,
+    pub beat_count: usize,
 }
 
 fn load_music(asset_server: Res<AssetServer>, mut commands: Commands) {
@@ -21,6 +22,7 @@ fn load_music(asset_server: Res<AssetServer>, mut commands: Commands) {
     });
     commands.insert_resource(SongPlayback {
         bpm_timer: Timer::from_seconds(0.48, TimerMode::Repeating),
+        beat_count: 0,
     });
 }
 
@@ -29,4 +31,7 @@ fn tick_song(
     time: Res<Time>
 ) {
     song.bpm_timer.tick(time.delta());
+    if song.bpm_timer.just_finished() {
+        song.beat_count += 1;
+    }
 }
