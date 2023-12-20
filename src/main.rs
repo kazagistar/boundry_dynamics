@@ -18,7 +18,7 @@ fn main() {
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins((SongPlugin, CharacterPlugin, MonsterPlugin, AnimationPlugin))
         .add_systems(Startup, start_camera)
-        .insert_resource(FixedTime::new_from_secs(1.0 / 60.0))
+        .insert_resource(Time::<Fixed>::from_seconds(1.0 / 60.0))
         .run();
 }
 
