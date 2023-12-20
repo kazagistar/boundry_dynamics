@@ -1,5 +1,5 @@
 - Isolate Juice and Chase to traits ✔️
-- bevy_proto
-- Add new monster with new pursuit behavior (right angle dashes)
+- Add new monster with new pursuit behavior (right angle dashes) ✔️
+- Animations
 - Add short range projectile attack
 - Add hp
